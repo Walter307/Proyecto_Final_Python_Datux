@@ -11,7 +11,7 @@ def IngestDataProducts(app:App):
     dataPais=GetDataSourcePais()
     CreateTablesPais(conn)
     InsertDataPais(bd,dataPais)
-    dataPostalCode=GetDatoSourcePostalCode()
+    dataPostalCode=GetDataSourcePostalCode()
     CreateTablePostalCode(conn)
     InsertDataPostalCode(bd,dataPostalCode)
     dataCategories=GetDataSourceCategories()
@@ -20,13 +20,16 @@ def IngestDataProducts(app:App):
     dataProducts=GetDataSourceProductos(conn)
     createTableProducts(conn)
     InsertManyProducts(bd,dataProducts)
+    dataRegiones=GetDataSourceRegiones()
+    createTableRegiones(conn)
+    InsertManyRegiones(bd,dataRegiones)
     dataVentas=GetDatasourceOrders(conn)
     createTableVentas(conn)
     insertManyVentas(bd,dataVentas)
 
 # insert products
 def GetDataSourcePais():
-    pathData="/workspaces/workspacepy0125/proyecto/files/data.xls"
+    pathData="/workspaces/Proyecto_Final_Python_Datux/proyecto/files/data.xls"
     df=pd.read_excel(pathData,sheet_name="Orders")
     print(df.shape)
     print(df.keys())
@@ -44,8 +47,8 @@ def InsertDataPais(bd:Database,data):
     bd.insert_many('PAIS',['name'],data)
 
 
-def GetDatoSourcePostalCode():
-    pathData="/workspaces/workspacepy0125/proyecto/files/data.xls"
+def GetDataSourcePostalCode():
+    pathData="/workspaces/Proyecto_Final_Python_Datux/proyecto/files/data.xls"
     df=pd.read_excel(pathData,sheet_name="Orders")
     df['Postal Code'] = df['Postal Code'].astype(str)
     df_postalCode=df[['Postal Code','Country','State']]
@@ -64,7 +67,7 @@ def InsertDataPostalCode(bd:Database,data):
     bd.insert_many('POSTALCODE',['code','pais','state'],data)
 
 def GetDataSourceCategories():
-    pathData="/workspaces/workspacepy0125/proyecto/files/data.xls"
+    pathData="/workspaces/Proyecto_Final_Python_Datux/proyecto/files/data.xls"
     df=pd.read_excel(pathData,sheet_name="Orders")
     df_categories=df[['Category','Sub-Category']].dropna().drop_duplicates()
     categories_tuples=[tuple(x) for x in df_categories.to_records(index=False)]
@@ -79,7 +82,7 @@ def InsertManyCategories(bd:Database,data):
 
 
 def GetDataSourceProductos(conn):
-    pathData="/workspaces/workspacepy0125/proyecto/files/data.xls"
+    pathData="/workspaces/Proyecto_Final_Python_Datux/proyecto/files/data.xls"
     df=pd.read_excel(pathData,sheet_name="Orders")
     df_products=df[['Product ID','Product Name','Category']].dropna().drop_duplicates()
     df_categoria=pd.read_sql_query("SELECT id,name FROM CATEGORIAS",conn)
@@ -97,18 +100,37 @@ def createTableProducts(conn:Connection):
 def InsertManyProducts(bd:Database,data):
     bd.insert_many('PRODUCTOS',['product_id','name','category_id'],data)
 
+def GetDataSourceRegiones():
+    pathData="/workspaces/Proyecto_Final_Python_Datux/proyecto/files/data.xls"
+    df=pd.read_excel(pathData,sheet_name="Orders")
+    df['Region'] = df['Region'].astype(str)
+    df_regiones=df[['Product Name','Product ID','Sub-Category']]
+    df_regiones=df_regiones.dropna()
+    df_regiones=df_regiones.drop_duplicates()
+
+    print(df_regiones.head())
+    regiones_tuples=[tuple(x) for x in df_regiones.to_records(index=False)]
+    return regiones_tuples
+
+def createTableRegiones(conn:Connection):
+    regiones=Regiones()
+    regiones.create_table(conn)
+
+def InsertManyRegiones(bd:Database,data):
+    bd.insert_many('REGIONES',['name','product_id','subcategory'],data)
+
 
 def GetDatasourceOrders(conn):
-    pathData="/workspaces/workspacepy0125/proyecto/files/data.xls"
+    pathData="/workspaces/Proyecto_Final_Python_Datux/proyecto/files/data.xls"
     df=pd.read_excel(pathData,sheet_name="Orders")
     df_products=pd.read_sql_query("SELECT id,name,product_id FROM PRODUCTOS",conn)
-    df_orders=df[['Order ID','Postal Code','Product ID','Sales','Quantity','Discount','Profit','Shipping Cost','Order Priority']].dropna().drop_duplicates()
+    df_orders=df[['Order ID','Postal Code','Product ID','Sales','Quantity','Discount','Profit','Shipping Cost','Order Priority','Region']].dropna().drop_duplicates()
     df_orders['Postal Code'] = df_orders['Postal Code'].astype(str)
     print('shape orders',df_orders.shape)
     df_newOrders=df_orders.merge(df_products,how="left",left_on="Product ID",right_on="product_id")
     df_newOrders=df_newOrders.drop_duplicates()
     print('shape orders 1',df_newOrders.shape)
-    df_newOrders=df_newOrders[['Order ID','Postal Code','id','Sales','Quantity','Discount','Profit','Shipping Cost','Order Priority']]
+    df_newOrders=df_newOrders[['Order ID','Postal Code','id','Sales','Quantity','Discount','Profit','Shipping Cost','Order Priority','Region']]
     list_tuples=[tuple(x) for x in df_newOrders.to_records(index=False)]
     return list_tuples
 
@@ -117,7 +139,7 @@ def createTableVentas(conn):
     ventas.create_table(conn)
 
 def insertManyVentas(bd:Database,data):
-    bd.insert_many('VENTAS',['order_id','postal_code','product_id','sales_amount','quantity','discount','profit','shipping_cost','order_priority'],data)
+    bd.insert_many('VENTAS',['order_id','postal_code','product_id','sales_amount','quantity','discount','profit','shipping_cost','order_priority','region_id'],data)
 
 
     

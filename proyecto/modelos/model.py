@@ -47,7 +47,7 @@ class Categorias:
         con.commit()
 
 class Productos:
-    """ Tabla PRODUCTOS: id, name, product_id, subcategory_id """
+    """ Tabla PRODUCTOS: id, name, product_id, category_id """
 
     def create_table(self, con: Connection):
         query = """
@@ -61,6 +61,24 @@ class Productos:
         cursor = con.cursor()
         cursor.execute(query)
         con.commit()
+
+# Agregar una clase catálogo
+
+class Regiones:
+    """ Tabla REGIONES: id, name, product_id, subcategory """ 
+    def create_table(self, con: Connection):
+        query = """
+            CREATE TABLE IF NOT EXISTS REGIONES (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR(50) NOT NULL,
+                product_id INTEGER NOT NULL,
+                subcategory VARCHAR(50) NOT NULL
+            );
+        """
+        cursor = con.cursor()
+        cursor.execute(query)
+        con.commit()
+
 
 class Ventas:
     """ Tabla VENTAS con múltiples relaciones """
@@ -77,7 +95,8 @@ class Ventas:
                 discount REAL NOT NULL,
                 profit REAL NOT NULL,
                 shipping_cost REAL NOT NULL,
-                order_priority VARCHAR(20) NOT NULL
+                order_priority VARCHAR(20) NOT NULL,
+                region_id INTEGER NOT NULL
             );
         """
         cursor = con.cursor()
